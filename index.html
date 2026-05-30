@@ -73,26 +73,25 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--ink);-we
 .ue-row{display:grid;grid-template-columns:auto 1fr 42px;align-items:center;gap:10px}
 .ue-lbl{font-size:12px;color:#cbd5e1;font-weight:500;text-align:right;white-space:nowrap}
 .ue-track{height:14px;border-radius:7px;background:rgba(255,255,255,.07);overflow:hidden}
-.ue-fill{display:block;height:100%;width:0;border-radius:7px;animation:haGrow 1.1s cubic-bezier(.4,0,.2,1) forwards}
-@keyframes haGrow{to{width:var(--w)}}
+.ue-fill{display:block;height:100%;width:0;border-radius:7px;transition:width 1.1s cubic-bezier(.4,0,.2,1)}
 .ue-pct{font-size:12.5px;font-weight:700;color:#fff;font-variant-numeric:tabular-nums;text-align:left}
 .c-costo{background:#cbd5c0}
 .c-pasarela{background:#f0c98a}
 .c-plataforma{background:#e8b06a}
 .c-otros{background:#d99a9a}
 .c-margen{background:var(--green-bright);box-shadow:0 0 12px rgba(74,222,128,.55)}
-.ue-row:nth-child(1) .ue-fill{animation-delay:.15s}
-.ue-row:nth-child(2) .ue-fill{animation-delay:.3s}
-.ue-row:nth-child(3) .ue-fill{animation-delay:.45s}
-.ue-row:nth-child(4) .ue-fill{animation-delay:.6s}
-.ue-row:nth-child(5) .ue-fill{animation-delay:.8s}
+.ue-row:nth-child(1) .ue-fill{transition-delay:.15s}
+.ue-row:nth-child(2) .ue-fill{transition-delay:.3s}
+.ue-row:nth-child(3) .ue-fill{transition-delay:.45s}
+.ue-row:nth-child(4) .ue-fill{transition-delay:.6s}
+.ue-row:nth-child(5) .ue-fill{transition-delay:.8s}
 .ue-row-margen{margin-top:4px;padding-top:13px;border-top:1px dashed rgba(255,255,255,.14)}
 .ue-row-margen .ue-lbl{color:var(--green-bright);font-weight:800}
 .ue-row-margen .ue-track{height:20px;border-radius:9px}
 .ue-row-margen .ue-pct{color:var(--green-bright);font-size:16px;font-weight:900}
 @media(prefers-reduced-motion:reduce){
   .hero-art,.ue-coin{animation:none}
-  .ue-fill{animation-duration:.01s;animation-delay:0s}
+  .ue-fill{transition:none}
 }
 
 /* ---------- SECTIONS ---------- */
@@ -320,11 +319,11 @@ body{font-family:'Inter',sans-serif;background:var(--cream);color:var(--ink);-we
         </div>
       </div>
       <div class="ue-rows">
-        <div class="ue-row"><span class="ue-lbl">Costo producto</span><span class="ue-track"><i class="ue-fill c-costo" style="--w:28%"></i></span><span class="ue-pct">28%</span></div>
-        <div class="ue-row"><span class="ue-lbl">Pasarela</span><span class="ue-track"><i class="ue-fill c-pasarela" style="--w:3%"></i></span><span class="ue-pct">3%</span></div>
-        <div class="ue-row"><span class="ue-lbl">Plataforma</span><span class="ue-track"><i class="ue-fill c-plataforma" style="--w:2%"></i></span><span class="ue-pct">2%</span></div>
-        <div class="ue-row"><span class="ue-lbl">Empaque + picking</span><span class="ue-track"><i class="ue-fill c-otros" style="--w:7%"></i></span><span class="ue-pct">7%</span></div>
-        <div class="ue-row ue-row-margen"><span class="ue-lbl">Tu margen</span><span class="ue-track"><i class="ue-fill c-margen" style="--w:60%"></i></span><span class="ue-pct">60%</span></div>
+        <div class="ue-row"><span class="ue-lbl">Costo producto</span><span class="ue-track"><i class="ue-fill c-costo" id="ha-costo"></i></span><span class="ue-pct" id="hap-costo">—</span></div>
+        <div class="ue-row"><span class="ue-lbl">Pasarela</span><span class="ue-track"><i class="ue-fill c-pasarela" id="ha-pasarela"></i></span><span class="ue-pct" id="hap-pasarela">—</span></div>
+        <div class="ue-row"><span class="ue-lbl">Plataforma</span><span class="ue-track"><i class="ue-fill c-plataforma" id="ha-plataforma"></i></span><span class="ue-pct" id="hap-plataforma">—</span></div>
+        <div class="ue-row"><span class="ue-lbl">Empaque + picking</span><span class="ue-track"><i class="ue-fill c-otros" id="ha-otros"></i></span><span class="ue-pct" id="hap-otros">—</span></div>
+        <div class="ue-row ue-row-margen"><span class="ue-lbl">Tu margen</span><span class="ue-track"><i class="ue-fill c-margen" id="ha-margen"></i></span><span class="ue-pct" id="hap-margen">—</span></div>
       </div>
     </div>
   </div>
@@ -514,6 +513,45 @@ const $ = id => document.getElementById(id);
 const fmt = n => '$' + Math.round(n).toLocaleString('es-CO');
 const fmt0 = n => Math.round(n).toLocaleString('es-CO');
 
+// --- Producto de ejemplo: ÚNICA fuente de datos. La calculadora y la ilustración leen de aquí. ---
+const EJEMPLO = {
+  nombre: $('pname').value,
+  precio: parseFloat($('precio').value)||0,
+  con_iva: $('tg-con').classList.contains('on'),   // estado inicial del toggle
+  iva: parseFloat($('iva').value)||0,
+  costo: parseFloat($('costo').value)||0,
+  pasarela_pct: parseFloat($('pasarela').value)||0,
+  plataforma_pct: parseFloat($('plataforma').value)||0,
+  empaque: parseFloat($('kitting').value)||0,
+  picking: parseFloat($('picking').value)||0,
+  unidades_por_pedido: parseFloat($('upp').value)||1
+};
+
+// Misma fórmula que la calculadora. Devuelve 5 enteros que SIEMPRE suman 100.
+function breakdownEjemplo(p){
+  const neto = p.con_iva ? p.precio/(1+p.iva/100) : p.precio;
+  const costo = Math.round(p.costo/neto*100);
+  const pasarela = Math.round(p.pasarela_pct);
+  const plataforma = Math.round(p.plataforma_pct);
+  const empaque_picking = Math.round(((p.empaque/p.unidades_por_pedido)+(p.picking/p.unidades_por_pedido))/neto*100);
+  const margen = 100 - costo - pasarela - plataforma - empaque_picking;  // el margen absorbe el residuo del redondeo
+  return {costo, pasarela, plataforma, empaque_picking, margen};
+}
+
+// Pinta la ilustración estática "A dónde va cada peso" desde EJEMPLO (nunca se escribe a mano).
+function renderHeroArt(){
+  const b = breakdownEjemplo(EJEMPLO);
+  const pairs = [['costo','costo'],['pasarela','pasarela'],['plataforma','plataforma'],['otros','empaque_picking'],['margen','margen']];
+  pairs.forEach(([id,key]) => {
+    const bar = $('ha-'+id);
+    bar.style.width = '0%';
+    void bar.offsetWidth;            // reflow: fija el 0 antes de la transición
+    bar.style.width = b[key]+'%';    // ancho final (dispara la transición del CSS)
+    $('hap-'+id).textContent = b[key]+'%';
+  });
+  console.log('[Hero art] A dónde va cada peso (desde EJEMPLO):', JSON.stringify(b), '· suma =', b.costo+b.pasarela+b.plataforma+b.empaque_picking+b.margen);
+}
+
 function setIva(on){
   ivaIncluido = on;
   $('tg-con').classList.toggle('on', on);
@@ -523,11 +561,11 @@ function setIva(on){
 }
 
 function loadAM(){
-  $('pname').value='AM — Protector solar';
-  $('precio').value=142561; setIva(true);
-  $('iva').value=19; $('costo').value=37500;
-  $('pasarela').value=3; $('plataforma').value=2;
-  $('kitting').value=4000; $('picking').value=3000; $('upp').value=2;
+  $('pname').value=EJEMPLO.nombre;
+  $('precio').value=EJEMPLO.precio; setIva(EJEMPLO.con_iva);
+  $('iva').value=EJEMPLO.iva; $('costo').value=EJEMPLO.costo;
+  $('pasarela').value=EJEMPLO.pasarela_pct; $('plataforma').value=EJEMPLO.plataforma_pct;
+  $('kitting').value=EJEMPLO.empaque; $('picking').value=EJEMPLO.picking; $('upp').value=EJEMPLO.unidades_por_pedido;
   calc();
 }
 
@@ -610,6 +648,7 @@ function calcShip(){
 ['pname','precio','iva','costo','pasarela','plataforma','kitting','picking','upp']
   .forEach(id=>$(id).addEventListener('input',calc));
 calc();
+renderHeroArt();
 </script>
 </body>
 </html>
